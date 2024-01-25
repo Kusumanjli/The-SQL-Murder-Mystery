@@ -1,0 +1,71 @@
+										THE SQL MURDER MYSTERY
+
+#Start with given info of crime type,date and city
+SELECT * 
+FROM crime_scene_report
+WHERE date=20180115 and type="murder" and city="SQL City"
+
+
+#Retrieve witnesses informtion using the description of crime scene
+SELECT *
+FROM person 
+WHERE name like 'Annabel%' and address_street_name='Franklin Ave'
+UNION
+select * from (
+SELECT *
+FROM person
+WHERE address_street_name='Northwestern Dr' ORDER BY address_number DESC LIMIT 1)A
+
+
+#Use witness description to identify killer using plate number,membership id and gym name along with subscription and last seen date in gym using other witness description
+select * from person all_people
+join drivers_license drivers on drivers.id=all_people.license_id 
+and drivers.plate_number like '%H42W%'
+join get_fit_now_member member on all_people.id=member.person_id and member.id like '48Z%'
+join get_fit_now_check_in checkin on checkin.membership_id = member.id 
+and checkin.check_in_date=20180109
+
+
+#Get details of the motive of murdered using murderes interview statement
+select inter.* from person all_people
+join drivers_license drivers on drivers.id=all_people.license_id 
+and drivers.plate_number like '%H42W%'
+join get_fit_now_member member on all_people.id=member.person_id and member.id like '48Z%'
+join get_fit_now_check_in checkin on checkin.membership_id = member.id 
+and checkin.check_in_date=20180109
+join interview inter on inter.person_id=member.person_id
+
+
+#Use killers statement to identify the actual villain
+select * from drivers_license drivers 
+join person per on per.license_id=drivers.id
+join facebook_event_checkin fec on fec.person_id=per.id
+where drivers.car_model='Model S' and drivers.car_make='Tesla' and drivers.hair_color='red'
+and gender='female' and height in (65,66,67)
+
+
+
+#Insert villains name to solution table
+INSERT INTO solution VALUES (1, 'Miranda Priestly');
+SELECT value FROM solution;
+
+
+Special Note:
+#Triggers used for checking final solution
+CREATE TRIGGER check_solution after
+INSERT
+ON solution WHEN new.USER==1 BEGIN
+DELETE
+FROM   solution;
+
+insert INTO solution VALUES
+            (
+                        0,
+                        CASE
+                                    WHEN hex(new.value)=='4A6572656D7920426F77657273' THEN "Congrats, you found the murderer! But wait, there's more... If you think you're up for a challenge, try querying the interview transcript of the murderer to find the real villain behind this crime. If you feel especially confident in your SQL skills, try to complete this final step with no more than 2 queries. Use this same INSERT statement with your new suspect to check your answer."
+                                    WHEN hex(new.value)=='4D6972616E6461205072696573746C79' THEN "Congrats, you found the brains behind the murder! Everyone in SQL City hails you as the greatest SQL detective of all time. Time to break out the champagne!"
+                                    ELSE "That's not the right person. Try again!"
+                        END
+            );
+
+end
